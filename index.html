@@ -2,11 +2,25 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>今日の傘マップ（電子ペーパー用）</title>
-<style>body{margin:0;background:#fff;text-align:center}img{width:800px;max-width:100%;height:auto}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>今日の傘マップ</title>
+<style>
+  html, body { margin:0; padding:0; background:#000; height:100%; overflow:hidden; }
+  body { display:flex; align-items:center; justify-content:center; }
+  img { max-width:100vw; max-height:100vh; object-fit:contain; display:block; }
+</style>
 </head>
 <body>
-<img src="latest.png" alt="今日の傘マップ">
+<img id="map" src="latest.png" alt="今日の傘マップ">
+<script>
+  // Reload the image every 10 minutes with a cache-busting query so the
+  // morning update appears on always-on displays without touching them.
+  var img = document.getElementById('map');
+  setInterval(function () {
+    img.src = 'latest.png?t=' + Date.now();
+  }, 10 * 60 * 1000);
+  // Full page reload once a day as a safety net.
+  setInterval(function () { location.reload(); }, 24 * 60 * 60 * 1000);
+</script>
 </body>
 </html>
