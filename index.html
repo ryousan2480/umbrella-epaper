@@ -6,7 +6,7 @@
 <title>今日の傘マップ</title>
 <style>
   html, body { margin:0; padding:0; background:#000; height:100%; overflow:hidden; }
-  body { font-family:"Noto Sans CJK JP", sans-serif; }
+  body { font-family:"Noto Sans CJK JP", sans-serif; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:none; }
   .slide {
     position:fixed; inset:0; width:100vw; height:100vh; object-fit:contain;
     opacity:0; transition:opacity .8s ease, filter .8s ease; pointer-events:none;
@@ -31,6 +31,19 @@
   #dots { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); z-index:10; display:flex; gap:8px; }
   #dots span { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.35); transition:background .4s; }
   #dots span.on { background:rgba(255,255,255,.95); }
+  /* Paused badge (same liquid glass style, small) */
+  #pauseBadge {
+    position:fixed; right:10px; bottom:10px; z-index:10; display:none;
+    padding:5px 10px; border-radius:999px;
+    color:#fff; font-size:11px; white-space:nowrap;
+    background:linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
+    backdrop-filter:blur(14px) saturate(160%);
+    border:1px solid rgba(255,255,255,.45);
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  body.paused #pauseBadge { display:block; }
+  body.paused #dots span.on { background:#ffb300; }
 </style>
 </head>
 <body>
@@ -39,6 +52,7 @@
 <img class="slide" id="slideNews" src="news.png" alt="今日のニュース">
 <div id="chip"><span class="dot"></span><span id="chipText"></span></div>
 <div id="dots"><span id="dot0"></span><span id="dot1"></span><span id="dot2"></span></div>
+<div id="pauseBadge">⏸ 一時停止中（長押しで再開）</div>
 <script>
   var slides = [
     { el: document.getElementById('slideUmbrella'), src: 'latest.png',  dwell: 40 * 1000, ok: true },
@@ -49,7 +63,13 @@
     s.el.addEventListener('error', function () { s.ok = false; });
   });
 
-  var cur = 0, timer = null;
+  var cur = 0, timer = null, paused = false;
+  function schedule() {
+    clearTimeout(timer);
+    if (!paused) {
+      timer = setTimeout(function () { show(cur + 1); }, slides[cur].dwell);
+    }
+  }
   function show(i) {
     var avail = slides.filter(function (s) { return s.ok; });
     if (!avail.length) return;
@@ -59,10 +79,31 @@
     document.getElementById('dot0').classList.toggle('on', cur === 0);
     document.getElementById('dot1').classList.toggle('on', cur === 1);
     document.getElementById('dot2').classList.toggle('on', cur === 2);
-    clearTimeout(timer);
-    timer = setTimeout(function () { show(cur + 1); }, slides[cur].dwell);
+    schedule();
   }
-  document.body.addEventListener('click', function () { show(cur + 1); });
+  function togglePause() {
+    paused = !paused;
+    document.body.classList.toggle('paused', paused);
+    schedule();
+  }
+
+  // Tap = next slide. Long press (600ms) = pause / resume auto-rotation.
+  var pressTimer = null, longPressed = false;
+  document.body.addEventListener('pointerdown', function () {
+    longPressed = false;
+    pressTimer = setTimeout(function () {
+      longPressed = true;
+      togglePause();
+    }, 600);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+    document.body.addEventListener(ev, function () { clearTimeout(pressTimer); });
+  });
+  document.body.addEventListener('click', function () {
+    if (longPressed) { longPressed = false; return; }
+    show(cur + 1);
+  });
+  document.body.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   show(0);
 
   var chipText = document.getElementById('chipText');
