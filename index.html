@@ -31,6 +31,27 @@
   #dots { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); z-index:10; display:flex; gap:8px; }
   #dots span { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.35); transition:background .4s; }
   #dots span.on { background:rgba(255,255,255,.95); }
+  /* EEW alert overlay (full-screen interrupt) */
+  #eew {
+    position:fixed; inset:0; z-index:60; display:none;
+    align-items:center; justify-content:center; text-align:center;
+    padding:4vmin; box-sizing:border-box;
+  }
+  #eewInner { display:flex; flex-direction:column; align-items:center; gap:1.2vmin; max-width:100%; }
+  #eewPicto { font-size:15vmin; line-height:1.1; }
+  #eewHeadJa { font-size:10.5vmin; font-weight:800; line-height:1.15; letter-spacing:.02em; }
+  #eewHeadEn { font-size:4.6vmin; font-weight:700; line-height:1.2; opacity:.92; }
+  #eewSubJa { font-size:4vmin; line-height:1.35; margin-top:1.6vmin; }
+  #eewSubEn { font-size:3.2vmin; line-height:1.3; opacity:.85; }
+  #eewActJa { font-size:5.6vmin; font-weight:800; line-height:1.3; margin-top:2.4vmin; }
+  #eewActEn { font-size:3.6vmin; font-weight:600; opacity:.9; }
+  @keyframes pulseRed { from { transform:scale(1); } to { transform:scale(1.02); } }
+  @keyframes blinkOrange { from { opacity:1; } to { opacity:.86; } }
+  .pulse-red-safe { animation:pulseRed 1.6s ease-in-out infinite alternate; }
+  .blink-orange-safe { animation:blinkOrange 2s ease-in-out infinite alternate; }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-red-safe, .blink-orange-safe { animation:none; }
+  }
 
 </style>
 </head>
@@ -40,6 +61,15 @@
 <img class="slide" id="slideNews" src="news.png" alt="今日のニュース">
 <div id="chip"><span class="dot"></span><span id="chipText"></span></div>
 <div id="dots"><span id="dot0"></span><span id="dot1"></span><span id="dot2"></span></div>
+<div id="eew"><div id="eewInner">
+  <div id="eewPicto"></div>
+  <div id="eewHeadJa"></div>
+  <div id="eewHeadEn"></div>
+  <div id="eewSubJa"></div>
+  <div id="eewSubEn"></div>
+  <div id="eewActJa"></div>
+  <div id="eewActEn"></div>
+</div></div>
 <script>
   var slides = [
     { el: document.getElementById('slideUmbrella'), src: 'latest.png',  dwell: 40 * 1000, ok: true },
@@ -69,6 +99,7 @@
     schedule();
   }
   function togglePause() {
+    if (eewVisible()) { return; }
     paused = !paused;
     if (navigator.vibrate) { navigator.vibrate(60); }
     schedule();
@@ -88,6 +119,7 @@
   });
   document.body.addEventListener('click', function () {
     if (longPressed) { longPressed = false; return; }
+    if (eewVisible()) { return; }
     show(cur + 1);
   });
   document.body.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -126,6 +158,151 @@
 
   // Full page reload once a day as a safety net.
   setInterval(function () { location.reload(); }, 24 * 60 * 60 * 1000);
+
+  // ===== 緊急地震速報 (EEW) interrupt display =====
+  // Source: Wolfx JMA EEW API (CORS-enabled). Polls every 5s; shows the
+  // overlay only while the latest telegram is fresh (<=150s old).
+  var EEW_API = 'https://api.wolfx.jp/jma_eew.json';
+  var EEW_TARGETS = ['熊本県熊本', '熊本県阿蘇', '熊本県天草・芦北', '熊本県球磨', '福岡県筑後', '大分県西部'];
+  var EEW_FRESH_MS = 150 * 1000;
+  var eewEl = document.getElementById('eew');
+  function eewVisible() { return eewEl.style.display === 'flex'; }
+
+  function shindoRank(s) {
+    if (!s) return 0;
+    s = ('' + s).trim();
+    if (s === '5弱') return 45;
+    if (s === '5強') return 50;
+    if (s === '6弱') return 55;
+    if (s === '6強') return 60;
+    var n = parseInt(s, 10);
+    return isNaN(n) ? 0 : n * 10;
+  }
+  function shindoEn(s) {
+    return { '5弱': '5-', '5強': '5+', '6弱': '6-', '6強': '6+' }[s] || ('' + s);
+  }
+  function parseJst(t) {
+    var m = ('' + t).match(/(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+    if (!m) return 0;
+    return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - 9 * 3600 * 1000;
+  }
+
+  // Build the signage JSON for one EEW telegram (spec: 2026 signage rules).
+  function buildSignage(d) {
+    var j = {
+      earthquake_id: (d && d.EventID) ? '' + d.EventID : null,
+      is_training: false,
+      trigger_alert: false,
+      signage_layout: { bg_color: '#101418', text_color: '#F2F2F7', css_animation_class: 'none', pictogram_type: 'NONE', theme: 'dark', responsive_safe_area: true, reduced_motion_fallback: 'static-high-contrast' },
+      signage_content: { main_headline_ja: '平常運転中', main_headline_en: 'NORMAL OPERATION', sub_info_ja: '現時点で避難を要する地震情報はありません。', sub_info_en: 'No earthquake requiring evacuation at this time.', action_guide_ja: '通常どおりご行動ください。', action_guide_en: 'Please continue as usual.' },
+      accessibility: { audio_cue: 'none', vibration_pattern: 'none', min_contrast_ratio: 4.5, max_flash_hz: 2.9 }
+    };
+    if (!d || d.isCancel) return j;
+    if (d.isTraining) {
+      j.is_training = true;
+      j.signage_layout.bg_color = '#007AFF'; j.signage_layout.text_color = '#FFFFFF';
+      j.signage_layout.pictogram_type = 'TRAINING_INFO'; j.signage_layout.theme = 'training';
+      j.signage_content.main_headline_ja = '【訓練】地震速報';
+      j.signage_content.main_headline_en = 'TRAINING ALERT';
+      j.signage_content.sub_info_ja = 'これは訓練です。実際の地震ではありません。';
+      j.signage_content.sub_info_en = 'This is a training exercise. No actual earthquake.';
+      j.signage_content.action_guide_ja = '訓練です。通常表示へ戻ります。';
+      j.signage_content.action_guide_en = 'Training only. Resuming normal display.';
+      j.accessibility.audio_cue = 'training_notice';
+      return j;
+    }
+    var best = null;
+    (d.WarnArea || []).forEach(function (w) {
+      if (EEW_TARGETS.indexOf(w.Chiiki) >= 0) {
+        var r = shindoRank(w.Shindo1);
+        if (!best || r > best.rank) best = { rank: r, from: w.Shindo1, to: w.Shindo2 };
+      }
+    });
+    if (!best) {
+      var near = /熊本|阿蘇|天草|芦北|球磨|筑後|大分/.test(d.Hypocenter || '');
+      var mr = shindoRank(d.MaxIntensity);
+      if (near && mr >= 20) best = { rank: mr, from: d.MaxIntensity, to: d.MaxIntensity };
+    }
+    if (!best || best.rank < 20) return j;
+    j.trigger_alert = true;
+    var ranged = shindoRank(best.to) > best.rank;
+    var label = best.from + (ranged ? '以上' : '');
+    var L = j.signage_layout, C = j.signage_content, A = j.accessibility;
+    L.theme = 'alert';
+    C.sub_info_ja = '震源：' + (d.Hypocenter || '不明') + ' / 菊池市周辺：震度' + label + '予測';
+    C.sub_info_en = 'Kikuchi, Kumamoto / Intensity ' + shindoEn(best.from) + (ranged ? '+' : '') + ' forecast';
+    if (best.rank >= 45) {
+      L.bg_color = '#FF3B30'; L.text_color = '#FFFFFF'; L.css_animation_class = 'pulse-red-safe'; L.pictogram_type = 'EVACUATE';
+      C.main_headline_ja = '強い揺れ！即避難'; C.main_headline_en = 'STRONG QUAKE: EVACUATE';
+      C.action_guide_ja = '低姿勢で頭を守り、安全へ'; C.action_guide_en = 'Drop, cover, move to safety.';
+      A.audio_cue = 'emergency_evacuation'; A.vibration_pattern = 'urgent';
+    } else if (best.rank >= 30) {
+      L.bg_color = '#FF9500'; L.text_color = '#000000'; L.css_animation_class = 'blink-orange-safe'; L.pictogram_type = 'PROTECT_HEAD';
+      C.main_headline_ja = '強い揺れに警戒！'; C.main_headline_en = 'EARTHQUAKE ALERT';
+      C.action_guide_ja = '姿勢を低くし、頭を守れ！'; C.action_guide_en = 'Drop, cover, and hold on!';
+      A.audio_cue = 'earthquake_warning'; A.vibration_pattern = 'alert';
+    } else {
+      L.bg_color = '#FFCC00'; L.text_color = '#000000'; L.css_animation_class = 'solid-yellow'; L.pictogram_type = 'WATCH_STEP';
+      C.main_headline_ja = '揺れに注意'; C.main_headline_en = 'EARTHQUAKE NOTICE';
+      C.action_guide_ja = '足元と周囲を確認'; C.action_guide_en = 'Check your surroundings.';
+      A.audio_cue = 'caution_notice'; A.vibration_pattern = 'gentle';
+    }
+    return j;
+  }
+
+  var PICTO = { TRAINING_INFO: 'ℹ️', EVACUATE: '🏃', PROTECT_HEAD: '⛑️', WATCH_STEP: '👀', NONE: '' };
+  var VIB = { urgent: [300, 100, 300, 100, 300], alert: [200, 100, 200], gentle: [80], none: null };
+  var eewShownKey = null;
+  function renderSignage(j) {
+    if (!j.is_training && !j.trigger_alert) {
+      eewEl.style.display = 'none';
+      eewShownKey = null;
+      return;
+    }
+    var L = j.signage_layout, C = j.signage_content;
+    eewEl.style.background = L.bg_color;
+    eewEl.style.color = L.text_color;
+    document.getElementById('eewInner').className = L.css_animation_class;
+    document.getElementById('eewPicto').textContent = PICTO[L.pictogram_type] || '';
+    document.getElementById('eewHeadJa').textContent = C.main_headline_ja;
+    document.getElementById('eewHeadEn').textContent = C.main_headline_en;
+    document.getElementById('eewSubJa').textContent = C.sub_info_ja;
+    document.getElementById('eewSubEn').textContent = C.sub_info_en;
+    document.getElementById('eewActJa').textContent = C.action_guide_ja;
+    document.getElementById('eewActEn').textContent = C.action_guide_en;
+    var key = j.earthquake_id + '|' + C.main_headline_ja + '|' + C.sub_info_ja;
+    if (key !== eewShownKey) {
+      eewShownKey = key;
+      var v = VIB[j.accessibility.vibration_pattern];
+      if (v && navigator.vibrate) navigator.vibrate(v);
+    }
+    eewEl.style.display = 'flex';
+  }
+
+  function pollEew() {
+    fetch(EEW_API, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.AnnouncedTime) { renderSignage(buildSignage(null)); return; }
+        var fresh = (Date.now() - parseJst(d.AnnouncedTime)) <= EEW_FRESH_MS;
+        renderSignage(fresh ? buildSignage(d) : buildSignage(null));
+      })
+      .catch(function () { /* network error: keep current state */ });
+  }
+
+  // Demo mode for checking the designs: ?demo=training | 5 | 4 | 3 | 2
+  var demo = (location.search.match(/[?&]demo=([a-z0-9]+)/) || [])[1];
+  if (demo) {
+    var demoFrom = { '5': '5弱', '4': '4', '3': '3', '2': '2' }[demo] || '4';
+    renderSignage(buildSignage({
+      EventID: 'DEMO', Hypocenter: '熊本県熊本地方', MaxIntensity: demoFrom,
+      isTraining: demo === 'training', isCancel: false,
+      WarnArea: [{ Chiiki: '熊本県熊本', Shindo1: demoFrom, Shindo2: demoFrom }]
+    }));
+  } else {
+    pollEew();
+    setInterval(pollEew, 5000);
+  }
 </script>
 </body>
 </html>
