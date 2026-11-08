@@ -141,7 +141,7 @@
   // Refresh whichever image changed (checked every minute via ETag).
   var tags = {};
   function checkOne(s) {
-    fetch(s.src, { method: 'HEAD', cache: 'no-store' })
+    fetch(s.src + '?cb=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
       .then(function (res) {
         var tag = res.headers.get('ETag') || res.headers.get('Last-Modified');
         if (tag && tags[s.src] && tag !== tags[s.src]) {
