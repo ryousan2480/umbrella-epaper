@@ -291,7 +291,7 @@
   }
 
   // Demo mode for checking the designs: ?demo=training | 5 | 4 | 3 | 2
-  var demo = (location.search.match(/[?&]demo=([a-z0-9]+)/) || [])[1];
+  var demo = (location.search.match(/[?&]demo=([a-z0-9]+)/) || [])[1] || 'training';
   if (demo) {
     var demoFrom = { '5': '5弱', '4': '4', '3': '3', '2': '2' }[demo] || '4';
     renderSignage(buildSignage({
