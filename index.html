@@ -299,7 +299,8 @@
       isTraining: demo === 'training', isCancel: false,
       WarnArea: [{ Chiiki: '熊本県熊本', Shindo1: demoFrom, Shindo2: demoFrom }]
     }));
-  } else {
+  } else if (!/[?&]native=1/.test(location.search)) {
+    // In the v2 Android app (?native=1) the native EEW engine handles alerts.
     pollEew();
     setInterval(pollEew, 5000);
   }
