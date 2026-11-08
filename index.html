@@ -91,6 +91,11 @@ body.night .slide { filter:brightness(.55);}
 .nitem .nt { font-size:2.5vmin; font-weight:700; line-height:1.5;}
 .nfoot { flex:none; font-size:1.5vmin; color:#6e6c66; padding:0.4vmin;}
 /* Liquid Glass chip */
+@media (prefers-reduced-motion: reduce) {
+.slide { transition:none; }
+}
+body.night .slide { filter:brightness(.45); }
+#chip .dot.stale { background:#ffb74d; box-shadow:0 0 5px #ffb74d; }
 #chip {
 position:fixed; left:4px; top:6px; z-index:10;
 display:flex; align-items:center; gap:5px;
@@ -358,12 +363,14 @@ function loadFeed(f) {
 fetch(f.url + '?cb=' + Date.now(), { cache: 'no-store'})
 .then(function (r) { if (!r.ok) throw new Error('bad'); return r.text();})
 .then(function (txt) {
+lastDataOk = Date.now();
 if (txt === f.last) return;
 f.last = txt;
 f.render(JSON.parse(txt));
 })
 .catch(function () { /* keep PNG fallback / last rendered HTML */});
 }
+var lastDataOk = Date.now();
 function loadAll() { feeds.forEach(loadFeed);}
 loadAll();
 setInterval(loadAll, 60 * 1000);
@@ -375,10 +382,16 @@ var slides = [
 { el: document.getElementById('slideNews'), dwell: 20 * 1000}
 ];
 var cur = 0, timer = null, paused = false;
+function dwellNow() {
+var h = new Date().getHours();
+if (h >= 5 && h < 9) { return [50, 35, 15][cur] * 1000; }
+if (h >= 22 || h < 5) { return [25, 20, 15][cur] * 1000; }
+return slides[cur].dwell;
+}
 function schedule() {
 clearTimeout(timer);
 if (!paused) {
-timer = setTimeout(function () { show(cur + 1);}, slides[cur].dwell);
+timer = setTimeout(function () { show(cur + 1);}, dwellNow());
 }
 }
 function show(i) {
@@ -420,7 +433,11 @@ var now = new Date();
 var wd = ['日','月','火','水','木','金','土'][now.getDay()];
 var hh = ('0' + now.getHours()).slice(-2);
 var mm = ('0' + now.getMinutes()).slice(-2);
-chipText.textContent = (now.getMonth() + 1) + '/' + now.getDate() + '(' + wd + ') ' + hh + ':' + mm;
+var staleMin = Math.floor((now.getTime() - lastDataOk) / 60000);
+var staleTxt = staleMin >= 10 ? ' ・データ' + staleMin + '分前' : '';
+chipText.textContent = (now.getMonth() + 1) + '/' + now.getDate() + '(' + wd + ') ' + hh + ':' + mm + staleTxt;
+var chipDot = document.querySelector('#chip .dot');
+if (chipDot) { chipDot.classList.toggle('stale', staleMin >= 10); }
 var h = now.getHours();
 document.body.classList.toggle('night', h >= 22 || h < 5);
 }
