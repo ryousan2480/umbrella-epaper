@@ -5,593 +5,305 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>今日の傘マップ</title>
 <style>
-html, body { margin:0; padding:0; background:#000; height:100%; overflow:hidden;}
-body { font-family:"Noto Sans CJK JP", sans-serif; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:none; color:#26262a;}
-.slide { position:fixed; inset:0; opacity:0; transition:opacity .8s ease, filter .8s ease; pointer-events:none; background:#000;}
-.slide.active { opacity:1;}
-body.night .slide { filter:brightness(.55);}
-.fallback { position:absolute; inset:0; width:100%; height:100%; object-fit:contain;}
-.stage { position:absolute; inset:0; display:none; background:#f7f2e9; padding:1.8vmin; box-sizing:border-box;}
-.stage.ready { display:flex; flex-direction:column; gap:1.8vmin;}
-.card { background:#fff; border-radius:2.2vmin; box-shadow:0.6vmin 1.8vmin rgba(60,50,30,.14); box-sizing:border-box; overflow:hidden;}
-/* Header card shared */
-.head { display:flex; align-items:center; gap:1.2vmin; padding:1.4vmin 2.2vmin; flex:none;}
-.head .dotc { width:1.6vmin; height:1.6vmin; border-radius:50%; flex:none;}
-.head .date { font-size:3.6vmin; font-weight:700; white-space:nowrap;}
-.head .title { font-size:3.2vmin; font-weight:700; white-space:nowrap;}
-.head .src { font-size:1.7vmin; color:#6e6c66; white-space:nowrap;}
-.head .upd { margin-left:auto; font-size:2vmin; font-weight:700; white-space:nowrap;}
-/* Umbrella slide */
-#stageUmbrella.ready { flex-direction:row;}
-.umap { flex:1.9; display:flex; flex-direction:column; padding:1.6vmin;}
-.umap img { flex:1; width:100%; min-height:0; object-fit:contain; border-radius:1.4vmin;}
-.umap .cap { flex:none; font-size:1.8vmin; color:#6e6c66; padding-top:1vmin;}
-.ucol { flex:1; display:flex; flex-direction:column; gap:1.8vmin; min-width:0;}
-.udate { padding:1.6vmin 2vmin; flex:none;}
-.udate .d1 { display:flex; align-items:center; gap:1vmin; font-size:3.8vmin; font-weight:700;}
-.udate .d1 .dotc { width:1.6vmin; height:1.6vmin; border-radius:50%; background:#4caf50; flex:none;}
-.udate .d2 { display:flex; gap:1.4vmin; align-items:baseline; margin-top:.4vmin;}
-.udate .d2 .t { font-size:2vmin; font-weight:700;}
-.udate .d2 .s { font-size:1.6vmin; color:#6e6c66;}
-.uarea { flex:1; display:flex; gap:1.6vmin; padding:1.6vmin 2vmin; align-items:center;}
-.uarea .chip { flex:none; width:5.2vmin; height:5.2vmin; border-radius:1.4vmin; display:flex; align-items:center; justify-content:center; font-size:3vmin; color:#fff;}
-.uarea .tt { font-size:2.3vmin; font-weight:700;}
-.uarea .bd { font-size:1.9vmin; color:#46443f; line-height:1.45; margin-top:.3vmin;}
-.ustory { flex:none; padding:1.6vmin 2vmin; font-size:1.9vmin; line-height:1.5;}
-.ustory .src2 { font-size:1.4vmin; color:#6e6c66; margin-top:.6vmin;}
-/* Weather slide */
-.wmid { flex:1; display:flex; gap:1.8vmin; min-height:0;}
-.wtoday { flex:1.55; padding:2vmin 2.6vmin; display:flex; flex-direction:column;}
-.wtoday .row1 { display:flex; align-items:center; gap:2vmin;}
-.wtoday .icon { font-size:11vmin; line-height:1;}
-.wtoday .lab { font-size:2.2vmin; color:#6e6c66; font-weight:700;}
-.wtoday .status { font-size:4.6vmin; font-weight:700; line-height:1.25;}
-.wtoday .temps { display:flex; align-items:baseline; gap:1.6vmin; margin-top:1.6vmin; flex-wrap:wrap;}
-.wtoday .temps .tl { font-size:2.2vmin; font-weight:700;}
-.wtoday .temps .tv { font-size:6vmin; font-weight:700;}
-.wtoday .temps .diff { font-size:1.8vmin; color:#6e6c66;}
-.hi { color:#c62828;}.lo { color:#1565c0;}
-.wtoday .hint { margin-top:auto;}
-.wtoday .hint .ht { font-size:1.8vmin; color:#6e6c66; font-weight:700; margin-bottom:.5vmin;}
-.wtoday .hint .hb { font-size:2.1vmin; line-height:1.55;}
-.wright { flex:1; padding:2vmin 2.4vmin; display:flex; flex-direction:column;}
-.wright .rt { font-size:2.6vmin; font-weight:700; margin-bottom:1.2vmin;}
-.rbar { display:flex; align-items:center; gap:1vmin; margin-bottom:1.4vmin;}
-.rbar .rl { font-size:2.1vmin; font-weight:700; width:5.5vmin; flex:none;}
-.rbar .track { flex:1 1 auto; min-width:10vmin; height:3.2vmin; background:#d9e0e7; border:1px solid #b9c4cf; border-radius:999px; overflow:hidden;}
-.rbar .fill { height:100%; background:#1565c0; border-radius:999px;}
-.rbar .rv { font-size:2.3vmin; font-weight:700; width:7vmin; flex:none;}
-.wash { display:flex; align-items:baseline; gap:1.2vmin; margin:1vmin 0 1.6vmin;}
-.wash .wl { font-size:2.1vmin; font-weight:700;}
-.wash .wv { font-size:3vmin; font-weight:700;}
-.wash .wt { font-size:1.9vmin; color:#6e6c66;}
-.hourly { margin-top:auto;}
-.hourly .hl { font-size:1.8vmin; color:#6e6c66; font-weight:700; margin-bottom:.8vmin;}
-.hourly .hrow { display:flex; flex-direction:row; flex-wrap:nowrap; width:100%;}
-.hourly .hcol { flex:1 1 0; min-width:0; text-align:center;}
-.hourly .hh { font-size:1.7vmin; color:#6e6c66;}
-.hourly .hi2 { font-size:3vmin; line-height:1.3;}
-.hourly .ht2 { font-size:1.9vmin; font-weight:700;}
-.hourly .hp { font-size:1.6vmin; color:#1565c0;}
-.wstrip { flex:none; display:flex; gap:1.8vmin;}
-.wday { flex:1; display:flex; align-items:center; gap:1.6vmin; padding:1.4vmin 2.2vmin;}
-.wday .icon { font-size:5vmin; line-height:1;}
-.wday .dl { font-size:1.9vmin; color:#6e6c66; font-weight:700;}
-.wday .ds { font-size:2.3vmin; font-weight:700;}
-.wday .dt { margin-left:auto; display:flex; gap:1vmin; align-items:baseline;}
-.wday .dt .tv { font-size:3vmin; font-weight:700;}
-.wday .dr { font-size:1.8vmin; color:#1565c0; white-space:nowrap;}
-/* News slide */
-.ncols { flex:1; display:flex; gap:1.8vmin; min-height:0;}
-.ncol { flex:1; display:flex; flex-direction:column; gap:1.4vmin; min-width:0;}
-.ncol .slab { display:flex; align-items:center; gap:1vmin; font-size:2.4vmin; font-weight:700; flex:none; padding:0.4vmin;}
-.ncol .slab .dotc { width:1.5vmin; height:1.5vmin; border-radius:50%;}
-.nitem { flex:1; display:flex; gap:1.6vmin; padding:1.8vmin 2vmin; align-items:center;}
-.nitem .num { flex:none; width:5vmin; height:5vmin; min-width:5vmin; line-height:1; border-radius:1.2vmin; color:#fff; display:flex; align-items:center; justify-content:center; font-size:2.4vmin; font-weight:700;}
-.nitem .nt { font-size:2.5vmin; font-weight:700; line-height:1.5;}
-.nfoot { flex:none; font-size:1.5vmin; color:#6e6c66; padding:0.4vmin;}
-/* Liquid Glass chip */
-@media (prefers-reduced-motion: reduce) {
-.slide { transition:none; }
-}
-body.night .slide { filter:brightness(.45); }
-#chip .dot.stale { background:#ffb74d; box-shadow:0 0 5px #ffb74d; }
-#chip {
-position:fixed; left:4px; top:6px; z-index:10;
-display:flex; align-items:center; gap:5px;
-padding:4px 8px; border-radius:999px;
-color:#fff; font-size:11px; letter-spacing:.01em; white-space:nowrap;
-background:linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
--webkit-backdrop-filter:blur(14px) saturate(160%);
-backdrop-filter:blur(14px) saturate(160%);
-border:1px solid rgba(255,255,255,.45);
-box-shadow:0 4px 18px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.5);
-text-shadow:0 1px 2px rgba(0,0,0,.35);
-}
-#chip .dot { width:6px; height:6px; border-radius:50%; background:#69f0ae; box-shadow:0 0 5px #69f0ae; flex:none;}
-/* Slide indicator */
-#dots { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); z-index:10; display:flex; gap:8px;}
-#dots span { width:8px; height:8px; border-radius:50%; background:rgba(120,110,90,.35); transition:background.4s;}
-#dots span.on { background:rgba(60,55,45,.9);}
-/* EEW alert overlay (full-screen interrupt) */
-#eew {
-position:fixed; inset:0; z-index:60; display:none;
-align-items:center; justify-content:center; text-align:center;
-padding:4vmin; box-sizing:border-box;
-}
-#eewInner { display:flex; flex-direction:column; align-items:center; gap:1.2vmin; max-width:100%;}
-#eewPicto { font-size:15vmin; line-height:1.1;}
-#eewHeadJa { font-size:10.5vmin; font-weight:800; line-height:1.15; letter-spacing:.02em;}
-#eewHeadEn { font-size:4.6vmin; font-weight:700; line-height:1.2; opacity:.92;}
-#eewSubJa { font-size:4vmin; line-height:1.35; margin-top:1.6vmin;}
-#eewSubEn { font-size:3.2vmin; line-height:1.3; opacity:.85;}
-#eewActJa { font-size:5.6vmin; font-weight:800; line-height:1.3; margin-top:2.4vmin;}
-#eewActEn { font-size:3.6vmin; font-weight:600; opacity:.9;}
-@keyframes pulseRed { from { transform:scale(1);} to { transform:scale(1.02);}}
-@keyframes blinkOrange { from { opacity:1;} to { opacity:.86;}}
-.pulse-red-safe { animation:pulseRed 1.6s ease-in-out infinite alternate;}
-.blink-orange-safe { animation:blinkOrange 2s ease-in-out infinite alternate;}
-@media (prefers-reduced-motion: reduce) {
-.pulse-red-safe,.blink-orange-safe { animation:none;}
-}
+  html, body { margin:0; padding:0; background:#000; height:100%; overflow:hidden; }
+  body { font-family:"Noto Sans CJK JP", sans-serif; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:none; }
+  .slide {
+    position:fixed; inset:0; width:100vw; height:100vh; object-fit:contain;
+    opacity:0; transition:opacity .8s ease, filter .8s ease; pointer-events:none;
+  }
+  .slide.active { opacity:1; }
+  body.night .slide { filter:brightness(.55); }
+  /* Liquid Glass chip */
+  #chip {
+    position:fixed; left:4px; top:6px; z-index:10;
+    display:flex; align-items:center; gap:5px;
+    padding:4px 8px; border-radius:999px;
+    color:#fff; font-size:11px; letter-spacing:.01em; white-space:nowrap;
+    background:linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
+    backdrop-filter:blur(14px) saturate(160%);
+    border:1px solid rgba(255,255,255,.45);
+    box-shadow:0 4px 18px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.5);
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  #chip .dot { width:6px; height:6px; border-radius:50%; background:#69f0ae; box-shadow:0 0 5px #69f0ae; flex:none; }
+  /* Slide indicator */
+  #dots { position:fixed; bottom:12px; left:50%; transform:translateX(-50%); z-index:10; display:flex; gap:8px; }
+  #dots span { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.35); transition:background .4s; }
+  #dots span.on { background:rgba(255,255,255,.95); }
+  /* EEW alert overlay (full-screen interrupt) */
+  #eew {
+    position:fixed; inset:0; z-index:60; display:none;
+    align-items:center; justify-content:center; text-align:center;
+    padding:4vmin; box-sizing:border-box;
+  }
+  #eewInner { display:flex; flex-direction:column; align-items:center; gap:1.2vmin; max-width:100%; }
+  #eewPicto { font-size:15vmin; line-height:1.1; }
+  #eewHeadJa { font-size:10.5vmin; font-weight:800; line-height:1.15; letter-spacing:.02em; }
+  #eewHeadEn { font-size:4.6vmin; font-weight:700; line-height:1.2; opacity:.92; }
+  #eewSubJa { font-size:4vmin; line-height:1.35; margin-top:1.6vmin; }
+  #eewSubEn { font-size:3.2vmin; line-height:1.3; opacity:.85; }
+  #eewActJa { font-size:5.6vmin; font-weight:800; line-height:1.3; margin-top:2.4vmin; }
+  #eewActEn { font-size:3.6vmin; font-weight:600; opacity:.9; }
+  @keyframes pulseRed { from { transform:scale(1); } to { transform:scale(1.02); } }
+  @keyframes blinkOrange { from { opacity:1; } to { opacity:.86; } }
+  .pulse-red-safe { animation:pulseRed 1.6s ease-in-out infinite alternate; }
+  .blink-orange-safe { animation:blinkOrange 2s ease-in-out infinite alternate; }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-red-safe, .blink-orange-safe { animation:none; }
+  }
+
 </style>
 </head>
 <body>
-<section class="slide" id="slideUmbrella"><img class="fallback" src="latest.png" alt="今日の傘マップ"><div class="stage" id="stageUmbrella"></div></section>
-<section class="slide" id="slideWeather"><img class="fallback" src="weather.png" alt="菊池市の天気"><div class="stage" id="stageWeather"></div></section>
-<section class="slide" id="slideNews"><img class="fallback" src="news.png" alt="今日のニュース"><div class="stage" id="stageNews"></div></section>
+<img class="slide" id="slideUmbrella" src="latest.png" alt="今日の傘マップ">
+<img class="slide" id="slideWeather" src="weather.png" alt="菊池市の天気">
+<img class="slide" id="slideNews" src="news.png" alt="今日のニュース">
 <div id="chip"><span class="dot"></span><span id="chipText"></span></div>
 <div id="dots"><span id="dot0"></span><span id="dot1"></span><span id="dot2"></span></div>
 <div id="eew"><div id="eewInner">
-<div id="eewPicto"></div>
-<div id="eewHeadJa"></div>
-<div id="eewHeadEn"></div>
-<div id="eewSubJa"></div>
-<div id="eewSubEn"></div>
-<div id="eewActJa"></div>
-<div id="eewActEn"></div>
+  <div id="eewPicto"></div>
+  <div id="eewHeadJa"></div>
+  <div id="eewHeadEn"></div>
+  <div id="eewSubJa"></div>
+  <div id="eewSubEn"></div>
+  <div id="eewActJa"></div>
+  <div id="eewActEn"></div>
 </div></div>
 <script>
-function el(tag, cls, text) {
-var e = document.createElement(tag);
-if (cls) e.className = cls;
-if (text!= null) e.textContent = text;
-return e;
-}
-function kindIcon(status) {
-status = status || '';
-if (status.indexOf('雪') >= 0) return '❄️';
-if (status.indexOf('雨') >= 0) return '🌧️';
-if (status.indexOf('晴') >= 0 && (status.indexOf('くもり') >= 0 || status.indexOf('曇') >= 0)) return '⛅';
-if (status.indexOf('晴') >= 0) return '☀️';
-return '☁️';
-}
+  var slides = [
+    { el: document.getElementById('slideUmbrella'), src: 'latest.png',  dwell: 40 * 1000, ok: true },
+    { el: document.getElementById('slideWeather'),  src: 'weather.png', dwell: 25 * 1000, ok: true },
+    { el: document.getElementById('slideNews'),     src: 'news.png',    dwell: 20 * 1000, ok: true }
+  ];
+  slides.forEach(function (s) {
+    s.el.addEventListener('error', function () { s.ok = false; });
+  });
 
-// ===== Umbrella slide (HTML; map itself stays an image from WeatherNews) =====
-function renderUmbrella(d) {
-var stage = document.getElementById('stageUmbrella');
-stage.innerHTML = '';
-var mapCard = el('div', 'card umap');
-var img = document.createElement('img');
-img.src = (d.map || 'map.png') + '?t=' + Date.now();
-img.alt = '今日の傘マップ';
-mapCard.appendChild(img);
-mapCard.appendChild(el('div', 'cap', 'ウェザーニュース「ひと目でわかる今日の傘マップ」'));
-stage.appendChild(mapCard);
-var col = el('div', 'ucol');
-var dc = el('div', 'card udate');
-var d1 = el('div', 'd1');
-d1.appendChild(el('span', 'dotc'));
-d1.appendChild(el('span', null, d.date || ''));
-dc.appendChild(d1);
-var d2 = el('div', 'd2');
-d2.appendChild(el('span', 't', '今日の傘マップ'));
-d2.appendChild(el('span', 's', '毎朝6:00 自動更新'));
-dc.appendChild(d2);
-col.appendChild(dc);
-[['大きい傘', d.big, '#1565c0'], ['折りたたみ傘', d.fold, '#ef6c00'], ['傘はいらない', d.none, '#2e7d32']].forEach(function (a) {
-var c = el('div', 'card uarea');
-var chip = el('div', 'chip', '☂');
-chip.style.background = a[2];
-c.appendChild(chip);
-var tx = el('div');
-tx.appendChild(el('div', 'tt', a[0]));
-tx.appendChild(el('div', 'bd', a[1] || ''));
-c.appendChild(tx);
-col.appendChild(c);
-});
-var sc = el('div', 'card ustory');
-sc.appendChild(el('div', null, d.story || ''));
-sc.appendChild(el('div', 'src2', '出典: ウェザーニュース'));
-col.appendChild(sc);
-stage.appendChild(col);
-stage.classList.add('ready');
-stage.previousElementSibling.style.display = 'none';
-}
+  var cur = 0, timer = null, paused = false;
+  function schedule() {
+    clearTimeout(timer);
+    if (!paused) {
+      timer = setTimeout(function () { show(cur + 1); }, slides[cur].dwell);
+    }
+  }
+  function show(i) {
+    var avail = slides.filter(function (s) { return s.ok; });
+    if (!avail.length) return;
+    cur = ((i % slides.length) + slides.length) % slides.length;
+    if (!slides[cur].ok) { show(cur + 1); return; }
+    slides.forEach(function (s, j) { s.el.classList.toggle('active', j === cur); });
+    document.getElementById('dot0').classList.toggle('on', cur === 0);
+    document.getElementById('dot1').classList.toggle('on', cur === 1);
+    document.getElementById('dot2').classList.toggle('on', cur === 2);
+    schedule();
+  }
+  function togglePause() {
+    if (eewVisible()) { return; }
+    paused = !paused;
+    if (navigator.vibrate) { navigator.vibrate(60); }
+    schedule();
+  }
 
-// ===== Weather slide (full HTML) =====
-function rainBar(label, pct) {
-var row = el('div', 'rbar');
-row.appendChild(el('span', 'rl', label));
-var track = el('div', 'track');
-var fill = el('div', 'fill');
-fill.style.width = (pct == null? 0: pct) + '%';
-track.appendChild(fill);
-row.appendChild(track);
-var v = el('span', 'rv', pct == null? '--%': pct + '%');
-if (pct!= null && pct >= 30) v.style.color = '#1565c0';
-row.appendChild(v);
-return row;
-}
-function dayCard(name, day, rainText) {
-var c = el('div', 'card wday');
-c.appendChild(el('div', 'icon', kindIcon(day.status)));
-var mid = el('div');
-mid.appendChild(el('div', 'dl', name + (day.date? ' ' + day.date: '')));
-mid.appendChild(el('div', 'ds', day.status || ''));
-c.appendChild(mid);
-var dt = el('div', 'dt');
-var h = el('span', 'tv hi', day.high + '°');
-var l = el('span', 'tv lo', day.low + '°');
-dt.appendChild(h); dt.appendChild(l);
-if (rainText) dt.appendChild(el('span', 'dr', rainText));
-c.appendChild(dt);
-return c;
-}
-function renderWeather(d) {
-var stage = document.getElementById('stageWeather');
-stage.innerHTML = '';
-var head = el('div', 'card head');
-var dot = el('span', 'dotc'); dot.style.background = '#f59600';
-head.appendChild(dot);
-head.appendChild(el('span', 'date', d.date || ''));
-head.appendChild(el('span', 'title', (d.area || '菊池市') + 'の天気'));
-head.appendChild(el('span', 'src', 'ウェザーニュース'));
-if (d.updated) head.appendChild(el('span', 'upd', d.updated + ' 更新'));
-stage.appendChild(head);
-var mid = el('div', 'wmid');
-var t = d.today || {};
-var tc = el('div', 'card wtoday');
-var r1 = el('div', 'row1');
-r1.appendChild(el('div', 'icon', kindIcon(t.status)));
-var st = el('div');
-st.appendChild(el('div', 'lab', '今日'));
-st.appendChild(el('div', 'status', t.status || ''));
-r1.appendChild(st);
-tc.appendChild(r1);
-var temps = el('div', 'temps');
-temps.appendChild(el('span', 'tl hi', '最高'));
-temps.appendChild(el('span', 'tv hi', t.high + '°'));
-if (t.high_diff) temps.appendChild(el('span', 'diff', '前日' + t.high_diff));
-temps.appendChild(el('span', 'tl lo', '最低'));
-temps.appendChild(el('span', 'tv lo', t.low + '°'));
-if (t.low_diff) temps.appendChild(el('span', 'diff', '前日' + t.low_diff));
-tc.appendChild(temps);
-var hint = el('div', 'hint');
-hint.appendChild(el('div', 'ht', '体感・服装のヒント'));
-var hb = (d.comment_text? ((d.comment_title? d.comment_title + '。': '') + d.comment_text): (d.story || ''));
-hint.appendChild(el('div', 'hb', hb));
-tc.appendChild(hint);
-mid.appendChild(tc);
-var rc = el('div', 'card wright');
-rc.appendChild(el('div', 'rt', '降水確率'));
-rc.appendChild(rainBar('午前', t.rain_am));
-rc.appendChild(rainBar('午後', t.rain_pm));
-if (d.wash) {
-var w = el('div', 'wash');
-w.appendChild(el('span', 'wl', '洗濯指数'));
-var wv = el('span', 'wv', '' + d.wash.value);
-wv.style.color = d.wash.value < 50? '#1565c0': '#2e7d32';
-w.appendChild(wv);
-w.appendChild(el('span', 'wt', d.wash.label || ''));
-rc.appendChild(w);
-}
-if (d.hourly && d.hourly.length) {
-var hr = el('div', 'hourly');
-hr.appendChild(el('div', 'hl', 'この先6時間'));
-var row = el('div', 'hrow');
-d.hourly.slice(0, 6).forEach(function (h) {
-var c = el('div', 'hcol');
-c.appendChild(el('div', 'hh', h.hour + '時'));
-c.appendChild(el('div', 'hi2', kindIcon(h.status)));
-c.appendChild(el('div', 'ht2', h.temp + '°'));
-c.appendChild(el('div', 'hp', h.pop!= null? h.pop + '%': (h.prec!= null? h.prec + 'mm': '')));
-row.appendChild(c);
-});
-hr.appendChild(row);
-rc.appendChild(hr);
-}
-mid.appendChild(rc);
-stage.appendChild(mid);
-var strip = el('div', 'wstrip');
-if (d.tomorrow) {
-var rt2 = '';
-if (d.tomorrow.rain_am!= null && d.tomorrow.rain_pm!= null) rt2 = '降水確率 午前' + d.tomorrow.rain_am + '% 午後' + d.tomorrow.rain_pm + '%';
-strip.appendChild(dayCard('明日', d.tomorrow, d.day_after? '': rt2));
-}
-if (d.day_after) strip.appendChild(dayCard('明後日', d.day_after, ''));
-if (strip.children.length) stage.appendChild(strip);
-stage.classList.add('ready');
-stage.previousElementSibling.style.display = 'none';
-}
+  // Tap = next slide. Long press (600ms) = pause / resume auto-rotation.
+  var pressTimer = null, longPressed = false;
+  document.body.addEventListener('pointerdown', function () {
+    longPressed = false;
+    pressTimer = setTimeout(function () {
+      longPressed = true;
+      togglePause();
+    }, 600);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+    document.body.addEventListener(ev, function () { clearTimeout(pressTimer); });
+  });
+  document.body.addEventListener('click', function () {
+    if (longPressed) { longPressed = false; return; }
+    if (eewVisible()) { return; }
+    show(cur + 1);
+  });
+  document.body.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  show(0);
 
-// ===== News slide (full HTML) =====
-var NEWS_COLORS = { NHK: '#1565c0', Yahoo: '#cc0033'};
-function renderNews(d) {
-var stage = document.getElementById('stageNews');
-stage.innerHTML = '';
-var head = el('div', 'card head');
-var dot = el('span', 'dotc'); dot.style.background = '#c62828';
-head.appendChild(dot);
-head.appendChild(el('span', 'date', d.date || ''));
-head.appendChild(el('span', 'title', '今日のニュース'));
-head.appendChild(el('span', 'src', 'NHK ／ Yahoo!ニュース'));
-if (d.updated) head.appendChild(el('span', 'upd', d.updated + ' 更新'));
-stage.appendChild(head);
-var cols = el('div', 'ncols');
-(d.sources || []).forEach(function (s) {
-var color = NEWS_COLORS[s.key] || '#1565c0';
-var col = el('div', 'ncol');
-var lab = el('div', 'slab');
-var d2 = el('span', 'dotc'); d2.style.background = color;
-lab.appendChild(d2);
-lab.appendChild(el('span', null, s.label || ''));
-col.appendChild(lab);
-(s.titles || []).forEach(function (title, i) {
-var item = el('div', 'card nitem');
-var num = el('div', 'num', '' + (i + 1));
-num.style.background = color;
-item.appendChild(num);
-item.appendChild(el('div', 'nt', title));
-col.appendChild(item);
-});
-cols.appendChild(col);
-});
-stage.appendChild(cols);
-stage.appendChild(el('div', 'nfoot', '出典: NHKニュース／Yahoo!ニュース（各RSS）'));
-stage.classList.add('ready');
-stage.previousElementSibling.style.display = 'none';
-}
+  var chipText = document.getElementById('chipText');
+  function tickClock() {
+    var now = new Date();
+    var wd = ['日','月','火','水','木','金','土'][now.getDay()];
+    var hh = ('0' + now.getHours()).slice(-2);
+    var mm = ('0' + now.getMinutes()).slice(-2);
+    chipText.textContent = (now.getMonth() + 1) + '/' + now.getDate() + '(' + wd + ') ' + hh + ':' + mm;
+    var h = now.getHours();
+    document.body.classList.toggle('night', h >= 22 || h < 5);
+  }
+  tickClock();
+  setInterval(tickClock, 30 * 1000);
 
-// ===== Data loading: JSON first, PNG fallback stays if JSON fails =====
-var feeds = [
-{ url: 'umbrella.json', render: renderUmbrella, last: null},
-{ url: 'weather.json', render: renderWeather, last: null},
-{ url: 'news.json', render: renderNews, last: null}
-];
-function loadFeed(f) {
-fetch(f.url + '?cb=' + Date.now(), { cache: 'no-store'})
-.then(function (r) { if (!r.ok) throw new Error('bad'); return r.text();})
-.then(function (txt) {
-lastDataOk = Date.now();
-if (txt === f.last) return;
-f.last = txt;
-f.render(JSON.parse(txt));
-})
-.catch(function () { /* keep PNG fallback / last rendered HTML */});
-}
-var lastDataOk = Date.now();
-function loadAll() { feeds.forEach(loadFeed);}
-loadAll();
-setInterval(loadAll, 60 * 1000);
+  // Refresh whichever image changed (checked every minute via ETag).
+  var tags = {};
+  function checkOne(s) {
+    fetch(s.src + '?cb=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+      .then(function (res) {
+        var tag = res.headers.get('ETag') || res.headers.get('Last-Modified');
+        if (tag && tags[s.src] && tag !== tags[s.src]) {
+          s.el.src = s.src + '?t=' + Date.now();
+          s.ok = true;
+        }
+        if (tag) { tags[s.src] = tag; }
+      })
+      .catch(function () { /* offline: keep current images */ });
+  }
+  function checkUpdates() { slides.forEach(checkOne); }
+  checkUpdates();
+  setInterval(checkUpdates, 60 * 1000);
 
-// ===== Slideshow rotation =====
-var slides = [
-{ el: document.getElementById('slideUmbrella'), dwell: 40 * 1000},
-{ el: document.getElementById('slideWeather'), dwell: 25 * 1000},
-{ el: document.getElementById('slideNews'), dwell: 20 * 1000}
-];
-var cur = 0, timer = null, paused = false;
-function dwellNow() {
-var h = new Date().getHours();
-if (h >= 5 && h < 9) { return [50, 35, 15][cur] * 1000; }
-if (h >= 22 || h < 5) { return [25, 20, 15][cur] * 1000; }
-return slides[cur].dwell;
-}
-function schedule() {
-clearTimeout(timer);
-if (!paused) {
-timer = setTimeout(function () { show(cur + 1);}, dwellNow());
-}
-}
-function show(i) {
-cur = ((i % slides.length) + slides.length) % slides.length;
-slides.forEach(function (s, j) { s.el.classList.toggle('active', j === cur);});
-document.getElementById('dot0').classList.toggle('on', cur === 0);
-document.getElementById('dot1').classList.toggle('on', cur === 1);
-document.getElementById('dot2').classList.toggle('on', cur === 2);
-schedule();
-}
-function togglePause() {
-if (eewVisible()) { return;}
-paused =!paused;
-if (navigator.vibrate) { navigator.vibrate(60);}
-schedule();
-}
-var pressTimer = null, longPressed = false;
-document.body.addEventListener('pointerdown', function () {
-longPressed = false;
-pressTimer = setTimeout(function () {
-longPressed = true;
-togglePause();
-}, 600);
-});
-['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
-document.body.addEventListener(ev, function () { clearTimeout(pressTimer);});
-});
-document.body.addEventListener('click', function () {
-if (longPressed) { longPressed = false; return;}
-if (eewVisible()) { return;}
-show(cur + 1);
-});
-document.body.addEventListener('contextmenu', function (e) { e.preventDefault();});
-show(0);
+  // Full page reload once a day as a safety net.
+  setInterval(function () { location.reload(); }, 24 * 60 * 60 * 1000);
 
-var chipText = document.getElementById('chipText');
-function tickClock() {
-var now = new Date();
-var wd = ['日','月','火','水','木','金','土'][now.getDay()];
-var hh = ('0' + now.getHours()).slice(-2);
-var mm = ('0' + now.getMinutes()).slice(-2);
-var staleMin = Math.floor((now.getTime() - lastDataOk) / 60000);
-var staleTxt = staleMin >= 10 ? ' ・データ' + staleMin + '分前' : '';
-chipText.textContent = (now.getMonth() + 1) + '/' + now.getDate() + '(' + wd + ') ' + hh + ':' + mm + staleTxt;
-var chipDot = document.querySelector('#chip .dot');
-if (chipDot) { chipDot.classList.toggle('stale', staleMin >= 10); }
-var h = now.getHours();
-document.body.classList.toggle('night', h >= 22 || h < 5);
-}
-tickClock();
-setInterval(tickClock, 30 * 1000);
+  // ===== 緊急地震速報 (EEW) interrupt display =====
+  // Source: Wolfx JMA EEW API (CORS-enabled). Polls every 5s; shows the
+  // overlay only while the latest telegram is fresh (<=150s old).
+  var EEW_API = 'https://api.wolfx.jp/jma_eew.json';
+  var EEW_TARGETS = ['熊本県熊本', '熊本県阿蘇', '熊本県天草・芦北', '熊本県球磨', '福岡県筑後', '大分県西部'];
+  var EEW_FRESH_MS = 150 * 1000;
+  var eewEl = document.getElementById('eew');
+  function eewVisible() { return eewEl.style.display === 'flex'; }
 
-// Full page reload once a day as a safety net.
-setInterval(function () { location.reload();}, 24 * 60 * 60 * 1000);
+  function shindoRank(s) {
+    if (!s) return 0;
+    s = ('' + s).trim();
+    if (s === '5弱') return 45;
+    if (s === '5強') return 50;
+    if (s === '6弱') return 55;
+    if (s === '6強') return 60;
+    var n = parseInt(s, 10);
+    return isNaN(n) ? 0 : n * 10;
+  }
+  function shindoEn(s) {
+    return { '5弱': '5-', '5強': '5+', '6弱': '6-', '6強': '6+' }[s] || ('' + s);
+  }
+  function parseJst(t) {
+    var m = ('' + t).match(/(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+    if (!m) return 0;
+    return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - 9 * 3600 * 1000;
+  }
 
-// ===== 緊急地震速報 (EEW) interrupt display =====
-// Source: Wolfx JMA EEW API (CORS-enabled). Polls every 5s; shows the
-// overlay only while the latest telegram is fresh (<=150s old).
-var EEW_API = 'https://api.wolfx.jp/jma_eew.json';
-var EEW_TARGETS = ['熊本県熊本', '熊本県阿蘇', '熊本県天草・芦北', '熊本県球磨', '福岡県筑後', '大分県西部'];
-var EEW_FRESH_MS = 150 * 1000;
-var eewEl = document.getElementById('eew');
-function eewVisible() { return eewEl.style.display === 'flex';}
+  // Build the signage JSON for one EEW telegram (spec: 2026 signage rules).
+  function buildSignage(d) {
+    var j = {
+      earthquake_id: (d && d.EventID) ? '' + d.EventID : null,
+      is_training: false,
+      trigger_alert: false,
+      signage_layout: { bg_color: '#101418', text_color: '#F2F2F7', css_animation_class: 'none', pictogram_type: 'NONE', theme: 'dark', responsive_safe_area: true, reduced_motion_fallback: 'static-high-contrast' },
+      signage_content: { main_headline_ja: '平常運転中', main_headline_en: 'NORMAL OPERATION', sub_info_ja: '現時点で避難を要する地震情報はありません。', sub_info_en: 'No earthquake requiring evacuation at this time.', action_guide_ja: '通常どおりご行動ください。', action_guide_en: 'Please continue as usual.' },
+      accessibility: { audio_cue: 'none', vibration_pattern: 'none', min_contrast_ratio: 4.5, max_flash_hz: 2.9 }
+    };
+    if (!d || d.isCancel) return j;
+    if (d.isTraining) {
+      j.is_training = true;
+      j.signage_layout.bg_color = '#007AFF'; j.signage_layout.text_color = '#FFFFFF';
+      j.signage_layout.pictogram_type = 'TRAINING_INFO'; j.signage_layout.theme = 'training';
+      j.signage_content.main_headline_ja = '【訓練】地震速報';
+      j.signage_content.main_headline_en = 'TRAINING ALERT';
+      j.signage_content.sub_info_ja = 'これは訓練です。実際の地震ではありません。';
+      j.signage_content.sub_info_en = 'This is a training exercise. No actual earthquake.';
+      j.signage_content.action_guide_ja = '訓練です。通常表示へ戻ります。';
+      j.signage_content.action_guide_en = 'Training only. Resuming normal display.';
+      j.accessibility.audio_cue = 'training_notice';
+      return j;
+    }
+    var best = null;
+    (d.WarnArea || []).forEach(function (w) {
+      if (EEW_TARGETS.indexOf(w.Chiiki) >= 0) {
+        var r = shindoRank(w.Shindo1);
+        if (!best || r > best.rank) best = { rank: r, from: w.Shindo1, to: w.Shindo2 };
+      }
+    });
+    if (!best) {
+      var near = /熊本|阿蘇|天草|芦北|球磨|筑後|大分/.test(d.Hypocenter || '');
+      var mr = shindoRank(d.MaxIntensity);
+      if (near && mr >= 20) best = { rank: mr, from: d.MaxIntensity, to: d.MaxIntensity };
+    }
+    if (!best || best.rank < 20) return j;
+    j.trigger_alert = true;
+    var ranged = shindoRank(best.to) > best.rank;
+    var label = best.from + (ranged ? '以上' : '');
+    var L = j.signage_layout, C = j.signage_content, A = j.accessibility;
+    L.theme = 'alert';
+    C.sub_info_ja = '震源：' + (d.Hypocenter || '不明') + ' / 菊池市周辺：震度' + label + '予測';
+    C.sub_info_en = 'Kikuchi, Kumamoto / Intensity ' + shindoEn(best.from) + (ranged ? '+' : '') + ' forecast';
+    if (best.rank >= 45) {
+      L.bg_color = '#FF3B30'; L.text_color = '#FFFFFF'; L.css_animation_class = 'pulse-red-safe'; L.pictogram_type = 'EVACUATE';
+      C.main_headline_ja = '強い揺れ！即避難'; C.main_headline_en = 'STRONG QUAKE: EVACUATE';
+      C.action_guide_ja = '低姿勢で頭を守り、安全へ'; C.action_guide_en = 'Drop, cover, move to safety.';
+      A.audio_cue = 'emergency_evacuation'; A.vibration_pattern = 'urgent';
+    } else if (best.rank >= 30) {
+      L.bg_color = '#FF9500'; L.text_color = '#000000'; L.css_animation_class = 'blink-orange-safe'; L.pictogram_type = 'PROTECT_HEAD';
+      C.main_headline_ja = '強い揺れに警戒！'; C.main_headline_en = 'EARTHQUAKE ALERT';
+      C.action_guide_ja = '姿勢を低くし、頭を守れ！'; C.action_guide_en = 'Drop, cover, and hold on!';
+      A.audio_cue = 'earthquake_warning'; A.vibration_pattern = 'alert';
+    } else {
+      L.bg_color = '#FFCC00'; L.text_color = '#000000'; L.css_animation_class = 'solid-yellow'; L.pictogram_type = 'WATCH_STEP';
+      C.main_headline_ja = '揺れに注意'; C.main_headline_en = 'EARTHQUAKE NOTICE';
+      C.action_guide_ja = '足元と周囲を確認'; C.action_guide_en = 'Check your surroundings.';
+      A.audio_cue = 'caution_notice'; A.vibration_pattern = 'gentle';
+    }
+    return j;
+  }
 
-function shindoRank(s) {
-if (!s) return 0;
-s = ('' + s).trim();
-if (s === '5弱') return 45;
-if (s === '5強') return 50;
-if (s === '6弱') return 55;
-if (s === '6強') return 60;
-var n = parseInt(s, 10);
-return isNaN(n)? 0: n * 10;
-}
-function shindoEn(s) {
-return { '5弱': '5-', '5強': '5+', '6弱': '6-', '6強': '6+'}[s] || ('' + s);
-}
-function parseJst(t) {
-var m = ('' + t).match(/(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
-if (!m) return 0;
-return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - 9 * 3600 * 1000;
-}
+  var PICTO = { TRAINING_INFO: 'ℹ️', EVACUATE: '🏃', PROTECT_HEAD: '⛑️', WATCH_STEP: '👀', NONE: '' };
+  var VIB = { urgent: [300, 100, 300, 100, 300], alert: [200, 100, 200], gentle: [80], none: null };
+  var eewShownKey = null;
+  function renderSignage(j) {
+    if (!j.is_training && !j.trigger_alert) {
+      eewEl.style.display = 'none';
+      eewShownKey = null;
+      return;
+    }
+    var L = j.signage_layout, C = j.signage_content;
+    eewEl.style.background = L.bg_color;
+    eewEl.style.color = L.text_color;
+    document.getElementById('eewInner').className = L.css_animation_class;
+    document.getElementById('eewPicto').textContent = PICTO[L.pictogram_type] || '';
+    document.getElementById('eewHeadJa').textContent = C.main_headline_ja;
+    document.getElementById('eewHeadEn').textContent = C.main_headline_en;
+    document.getElementById('eewSubJa').textContent = C.sub_info_ja;
+    document.getElementById('eewSubEn').textContent = C.sub_info_en;
+    document.getElementById('eewActJa').textContent = C.action_guide_ja;
+    document.getElementById('eewActEn').textContent = C.action_guide_en;
+    var key = j.earthquake_id + '|' + C.main_headline_ja + '|' + C.sub_info_ja;
+    if (key !== eewShownKey) {
+      eewShownKey = key;
+      var v = VIB[j.accessibility.vibration_pattern];
+      if (v && navigator.vibrate) navigator.vibrate(v);
+    }
+    eewEl.style.display = 'flex';
+  }
 
-// Build the signage JSON for one EEW telegram (spec: 2026 signage rules).
-function buildSignage(d) {
-var j = {
-earthquake_id: (d && d.EventID)? '' + d.EventID: null,
-is_training: false,
-trigger_alert: false,
-signage_layout: { bg_color: '#101418', text_color: '#F2F2F7', css_animation_class: 'none', pictogram_type: 'NONE', theme: 'dark', responsive_safe_area: true, reduced_motion_fallback: 'static-high-contrast'},
-signage_content: { main_headline_ja: '平常運転中', main_headline_en: 'NORMAL OPERATION', sub_info_ja: '現時点で避難を要する地震情報はありません。', sub_info_en: 'No earthquake requiring evacuation at this time.', action_guide_ja: '通常どおりご行動ください。', action_guide_en: 'Please continue as usual.'},
-accessibility: { audio_cue: 'none', vibration_pattern: 'none', min_contrast_ratio: 4.5, max_flash_hz: 2.9}
-};
-if (!d || d.isCancel) return j;
-if (d.isTraining) {
-j.is_training = true;
-j.signage_layout.bg_color = '#007AFF'; j.signage_layout.text_color = '#FFFFFF';
-j.signage_layout.pictogram_type = 'TRAINING_INFO'; j.signage_layout.theme = 'training';
-j.signage_content.main_headline_ja = '地震速報';
-j.signage_content.main_headline_en = 'TRAINING ALERT';
-j.signage_content.sub_info_ja = 'これは訓練です。実際の地震ではありません。';
-j.signage_content.sub_info_en = 'This is a training exercise. No actual earthquake.';
-j.signage_content.action_guide_ja = '訓練です。通常表示へ戻ります。';
-j.signage_content.action_guide_en = 'Training only. Resuming normal display.';
-j.accessibility.audio_cue = 'training_notice';
-return j;
-}
-var best = null;
-(d.WarnArea || []).forEach(function (w) {
-if (EEW_TARGETS.indexOf(w.Chiiki) >= 0) {
-var r = shindoRank(w.Shindo1);
-if (!best || r > best.rank) best = { rank: r, from: w.Shindo1, to: w.Shindo2};
-}
-});
-if (!best) {
-var near = /熊本|阿蘇|天草|芦北|球磨|筑後|大分/.test(d.Hypocenter || '');
-var mr = shindoRank(d.MaxIntensity);
-if (near && mr >= 20) best = { rank: mr, from: d.MaxIntensity, to: d.MaxIntensity};
-}
-if (!best || best.rank < 20) return j;
-j.trigger_alert = true;
-var ranged = shindoRank(best.to) > best.rank;
-var label = best.from + (ranged? '以上': '');
-var L = j.signage_layout, C = j.signage_content, A = j.accessibility;
-L.theme = 'alert';
-C.sub_info_ja = '震源：' + (d.Hypocenter || '不明') + ' / 菊池市周辺：震度' + label + '予測';
-C.sub_info_en = 'Kikuchi, Kumamoto / Intensity ' + shindoEn(best.from) + (ranged? '+': '') + ' forecast';
-if (best.rank >= 45) {
-L.bg_color = '#FF3B30'; L.text_color = '#FFFFFF'; L.css_animation_class = 'pulse-red-safe'; L.pictogram_type = 'EVACUATE';
-C.main_headline_ja = '強い揺れ！即避難'; C.main_headline_en = 'STRONG QUAKE: EVACUATE';
-C.action_guide_ja = '低姿勢で頭を守り、安全へ'; C.action_guide_en = 'Drop, cover, move to safety.';
-A.audio_cue = 'emergency_evacuation'; A.vibration_pattern = 'urgent';
-} else if (best.rank >= 30) {
-L.bg_color = '#FF9500'; L.text_color = '#000000'; L.css_animation_class = 'blink-orange-safe'; L.pictogram_type = 'PROTECT_HEAD';
-C.main_headline_ja = '強い揺れに警戒！'; C.main_headline_en = 'EARTHQUAKE ALERT';
-C.action_guide_ja = '姿勢を低くし、頭を守れ！'; C.action_guide_en = 'Drop, cover, and hold on!';
-A.audio_cue = 'earthquake_warning'; A.vibration_pattern = 'alert';
-} else {
-L.bg_color = '#FFCC00'; L.text_color = '#000000'; L.css_animation_class = 'solid-yellow'; L.pictogram_type = 'WATCH_STEP';
-C.main_headline_ja = '揺れに注意'; C.main_headline_en = 'EARTHQUAKE NOTICE';
-C.action_guide_ja = '足元と周囲を確認'; C.action_guide_en = 'Check your surroundings.';
-A.audio_cue = 'caution_notice'; A.vibration_pattern = 'gentle';
-}
-return j;
-}
+  function pollEew() {
+    fetch(EEW_API, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.AnnouncedTime) { renderSignage(buildSignage(null)); return; }
+        var fresh = (Date.now() - parseJst(d.AnnouncedTime)) <= EEW_FRESH_MS;
+        renderSignage(fresh ? buildSignage(d) : buildSignage(null));
+      })
+      .catch(function () { /* network error: keep current state */ });
+  }
 
-var PICTO = { TRAINING_INFO: 'ℹ️', EVACUATE: '🏃', PROTECT_HEAD: '⛑️', WATCH_STEP: '👀', NONE: ''};
-var VIB = { urgent: [300, 100, 300, 100, 300], alert: [200, 100, 200], gentle: [80], none: null};
-var eewShownKey = null;
-function renderSignage(j) {
-if (!j.is_training &&!j.trigger_alert) {
-eewEl.style.display = 'none';
-eewShownKey = null;
-return;
-}
-var L = j.signage_layout, C = j.signage_content;
-eewEl.style.background = L.bg_color;
-eewEl.style.color = L.text_color;
-document.getElementById('eewInner').className = L.css_animation_class;
-document.getElementById('eewPicto').textContent = PICTO[L.pictogram_type] || '';
-document.getElementById('eewHeadJa').textContent = C.main_headline_ja;
-document.getElementById('eewHeadEn').textContent = C.main_headline_en;
-document.getElementById('eewSubJa').textContent = C.sub_info_ja;
-document.getElementById('eewSubEn').textContent = C.sub_info_en;
-document.getElementById('eewActJa').textContent = C.action_guide_ja;
-document.getElementById('eewActEn').textContent = C.action_guide_en;
-var key = j.earthquake_id + '|' + C.main_headline_ja + '|' + C.sub_info_ja;
-if (key!== eewShownKey) {
-eewShownKey = key;
-var v = VIB[j.accessibility.vibration_pattern];
-if (v && navigator.vibrate) navigator.vibrate(v);
-}
-eewEl.style.display = 'flex';
-}
-
-function pollEew() {
-fetch(EEW_API, { cache: 'no-store'})
-.then(function (r) { return r.json();})
-.then(function (d) {
-if (!d ||!d.AnnouncedTime) { renderSignage(buildSignage(null)); return;}
-var fresh = (Date.now() - parseJst(d.AnnouncedTime)) <= EEW_FRESH_MS;
-renderSignage(fresh? buildSignage(d): buildSignage(null));
-})
-.catch(function () { /* network error: keep current state */});
-}
-
-// Demo mode for checking the designs:?demo=training | 5 | 4 | 3 | 2
-var demo = (location.search.match(/[?&]demo=([a-z0-9]+)/) || [])[1];
-if (demo) {
-var demoFrom = { '5': '5弱', '4': '4', '3': '3', '2': '2'}[demo] || '4';
-renderSignage(buildSignage({
-EventID: 'DEMO', Hypocenter: '熊本県熊本地方', MaxIntensity: demoFrom,
-isTraining: demo === 'training', isCancel: false,
-WarnArea: [{ Chiiki: '熊本県熊本', Shindo1: demoFrom, Shindo2: demoFrom}]
-}));
-} else if (!/[?&]native=1/.test(location.search)) {
-// In the v2 Android app (?native=1) the native EEW engine handles alerts.
-pollEew();
-setInterval(pollEew, 5000);
-}
+  // Demo mode for checking the designs: ?demo=training | 5 | 4 | 3 | 2
+  var demo = (location.search.match(/[?&]demo=([a-z0-9]+)/) || [])[1];
+  if (demo) {
+    var demoFrom = { '5': '5弱', '4': '4', '3': '3', '2': '2' }[demo] || '4';
+    renderSignage(buildSignage({
+      EventID: 'DEMO', Hypocenter: '熊本県熊本地方', MaxIntensity: demoFrom,
+      isTraining: demo === 'training', isCancel: false,
+      WarnArea: [{ Chiiki: '熊本県熊本', Shindo1: demoFrom, Shindo2: demoFrom }]
+    }));
+  } else if (!/[?&]native=1/.test(location.search)) {
+    // In the v2 Android app (?native=1) the native EEW engine handles alerts.
+    pollEew();
+    setInterval(pollEew, 5000);
+  }
 </script>
 </body>
 </html>
