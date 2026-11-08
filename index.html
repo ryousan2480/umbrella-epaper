@@ -35,15 +35,19 @@
 </head>
 <body>
 <img class="slide" id="slideUmbrella" src="latest.png" alt="今日の傘マップ">
+<img class="slide" id="slideWeather" src="weather.png" alt="菊池市の天気">
 <img class="slide" id="slideNews" src="news.png" alt="今日のニュース">
 <div id="chip"><span class="dot"></span><span id="chipText"></span></div>
-<div id="dots"><span id="dot0"></span><span id="dot1"></span></div>
+<div id="dots"><span id="dot0"></span><span id="dot1"></span><span id="dot2"></span></div>
 <script>
   var slides = [
-    { el: document.getElementById('slideUmbrella'), src: 'latest.png', dwell: 40 * 1000, ok: true },
-    { el: document.getElementById('slideNews'),     src: 'news.png',   dwell: 20 * 1000, ok: true }
+    { el: document.getElementById('slideUmbrella'), src: 'latest.png',  dwell: 40 * 1000, ok: true },
+    { el: document.getElementById('slideWeather'),  src: 'weather.png', dwell: 25 * 1000, ok: true },
+    { el: document.getElementById('slideNews'),     src: 'news.png',    dwell: 20 * 1000, ok: true }
   ];
-  slides[1].el.addEventListener('error', function () { slides[1].ok = false; });
+  slides.forEach(function (s) {
+    s.el.addEventListener('error', function () { s.ok = false; });
+  });
 
   var cur = 0, timer = null;
   function show(i) {
@@ -54,6 +58,7 @@
     slides.forEach(function (s, j) { s.el.classList.toggle('active', j === cur); });
     document.getElementById('dot0').classList.toggle('on', cur === 0);
     document.getElementById('dot1').classList.toggle('on', cur === 1);
+    document.getElementById('dot2').classList.toggle('on', cur === 2);
     clearTimeout(timer);
     timer = setTimeout(function () { show(cur + 1); }, slides[cur].dwell);
   }
